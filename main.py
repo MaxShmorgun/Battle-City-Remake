@@ -19,21 +19,30 @@ tile_w = SCREEN_WIDTH / cols
 tile_h = SCREEN_HEIGHT / rows
 
 player = Player(x=6 * tile_w, y=13 * tile_h, tile_w=tile_w, tile_h=tile_h, game_map=game_map)
+player.weapon.screen_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
 clock = pygame.time.Clock()
 FPS = 60
 
 def main():
+    bullets = []
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                bullets.append(player.fire())
 
         player.update()
+        for bullet in bullets:
+            bullet.update()
+        bullets = [bullet for bullet in bullets if bullet.active]
 
         screen.fill((0, 0, 0))
         game_map.draw(screen)
+        for bullet in bullets:
+            bullet.draw(screen)
         player.draw(screen)
 
         pygame.display.flip()

@@ -1,4 +1,5 @@
 import pygame
+from weapons import Weapon
 
 class Player:
     def __init__(self, x, y, tile_w, tile_h, game_map):
@@ -8,6 +9,8 @@ class Player:
         
         self.rect = pygame.Rect(x, y, tile_w * 0.8, tile_h * 0.8)
         self.speed = 4
+        self.facing = "up"
+        self.weapon = Weapon(tile_w, tile_h, game_map, (500, 525))
 
     def is_colliding(self, rect):
         grid = self.game_map.grid
@@ -43,6 +46,7 @@ class Player:
             move_y = 1
 
         if move_x != 0:
+            self.facing = "right" if move_x > 0 else "left"
             self.rect.x += move_x * self.speed
             if self.is_colliding(self.rect):
                 if move_x > 0:
@@ -51,6 +55,7 @@ class Player:
                     self.rect.left = (self.rect.left // self.tile_w + 1) * self.tile_w
 
         if move_y != 0:
+            self.facing = "down" if move_y > 0 else "up"
             self.rect.y += move_y * self.speed
             if self.is_colliding(self.rect):
                 if move_y > 0:
@@ -60,6 +65,9 @@ class Player:
 
     def update(self):
         self.handle_input()
+
+    def fire(self):
+        return self.weapon.fire(self.rect.center, self.facing)
 
     def draw(self, surface):
         pygame.draw.rect(surface, (0, 255, 0), self.rect)
