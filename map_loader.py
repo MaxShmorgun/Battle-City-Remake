@@ -5,9 +5,9 @@ import pygame
 COLORS = {
     "1": (139, 69, 19),
     "0": (0, 0, 0),
-    "E": (255, 0, 0),
+    #"E": (255, 0, 0),
     "B": (100, 100, 100),
-    "P": (0, 255, 0),
+    #"P": (0, 255, 0),
     "F": (255, 215, 0)
 }
 
@@ -15,6 +15,12 @@ class Map:
     def __init__(self, file_path):
         self.file_path = file_path
         self.grid = self.load_map()
+        texture_path = os.path.join(
+            os.path.dirname(__file__), "assets", "images", "wall_texture.jpg"
+        )
+        self.wall_texture = pygame.image.load(texture_path)
+        self.scaled_wall_texture = None
+        self.scaled_wall_size = None
 
     def load_map(self):
         if not os.path.exists(self.file_path):
@@ -34,6 +40,12 @@ class Map:
 
         tile_w = screen_w / cols
         tile_h = screen_h / rows
+        texture_size = (int(tile_w + 1), int(tile_h + 1))
+        if self.scaled_wall_size != texture_size:
+            self.scaled_wall_texture = pygame.transform.scale(
+                self.wall_texture, texture_size
+            )
+            self.scaled_wall_size = texture_size
 
         for row_index, row in enumerate(self.grid):
             for col_index, tile in enumerate(row):
@@ -44,4 +56,7 @@ class Map:
                     tile_w + 1, 
                     tile_h + 1
                 )
-                pygame.draw.rect(surface, color, rect)
+                if str(tile) == "1":
+                    surface.blit(self.scaled_wall_texture, rect.topleft)
+                else:
+                    pygame.draw.rect(surface, color, rect)
