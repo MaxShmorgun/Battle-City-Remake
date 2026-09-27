@@ -4,8 +4,10 @@ from boss import Boss
 from enemy import Enemy
 from map_loader import Map
 from player import Player
+from menu import Menu
 
 pygame.init()
+pygame.mixer.init()
 
 SCREEN_WIDTH = 500
 SCREEN_HEIGHT = 525
@@ -31,6 +33,7 @@ player_spawn = next(
 )
 player = Player(x=player_spawn[0], y=player_spawn[1], tile_w=tile_w, tile_h=tile_h, game_map=game_map)
 player.weapon.screen_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
+
 
 enemy_spawns = []
 boss_spawn = None
@@ -82,19 +85,38 @@ def wave_completion_text(wave_number):
     pygame.display.flip()
     pygame.time.delay(2000)
 
+menu = Menu(screen, SCREEN_WIDTH, SCREEN_HEIGHT, background_path="assets/images/menu.jpg")
+
+
 clock = pygame.time.Clock()
 FPS = 60
 
+game_state = "menu"
+current_music_state = None
+
+def play_game_music():
+    try:
+        pygame.mixer.music.load("assets/sounds/game.mp3")
+        pygame.mixer.music.play(-1)
+    except Exception:
+        pass
+
 def main():
+
     wave = 1
     base_health = 5
     spawn_queue = create_wave(wave)
     enemies = []
+
+    global game_state, current_music_state
+
     bullets = []
     next_spawn_time = 0
     pygame.display.set_caption(f"Battle City Remake - Wave {wave}. Base HP: {base_health}.")
     running = True
+
     while running:
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -172,6 +194,39 @@ def main():
         player.draw(screen)
 
         pygame.display.flip()
+        
+        if game_state != current_music_state:
+            current_music_state = game_state
+            if game_state == "menu":
+                menu.play_menu_music()
+            elif game_state == "play":
+                play_game_music()
+
+        if game_state == "menu":
+            game_state = menu.handle_events()
+            menu.draw()
+
+        elif game_state == "play":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    bullets.append(player.fire())
+
+            player.update()
+            
+            for bullet in bullets:
+                bullet.update()
+            bullets = [bullet for bullet in bullets if bullet.active]
+
+            screen.fill((0, 0, 0))
+            game_map.draw(screen)
+            for bullet in bullets:
+                bullet.draw(screen)
+            player.draw(screen)
+
+            pygame.display.flip()
+
         clock.tick(FPS)
 
     pygame.quit()
