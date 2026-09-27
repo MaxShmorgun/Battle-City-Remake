@@ -5,6 +5,7 @@ from player import Player
 from menu import Menu
 
 pygame.init()
+pygame.mixer.init()
 
 SCREEN_WIDTH = 500
 SCREEN_HEIGHT = 525
@@ -28,13 +29,28 @@ clock = pygame.time.Clock()
 FPS = 60
 
 game_state = "menu"
+current_music_state = None
+
+def play_game_music():
+    try:
+        pygame.mixer.music.load("assets/sounds/game.mp3")
+        pygame.mixer.music.play(-1)
+    except Exception:
+        pass
 
 def main():
-    global game_state
+    global game_state, current_music_state
     bullets = []
     running = True
 
     while running:
+        if game_state != current_music_state:
+            current_music_state = game_state
+            if game_state == "menu":
+                menu.play_menu_music()
+            elif game_state == "play":
+                play_game_music()
+
         if game_state == "menu":
             game_state = menu.handle_events()
             menu.draw()
