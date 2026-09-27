@@ -2,8 +2,10 @@ import sys
 import pygame
 from map_loader import Map
 from player import Player
+from menu import Menu
 
 pygame.init()
+pygame.mixer.init()
 
 SCREEN_WIDTH = 500
 SCREEN_HEIGHT = 525
@@ -21,31 +23,59 @@ tile_h = SCREEN_HEIGHT / rows
 player = Player(x=6 * tile_w, y=13 * tile_h, tile_w=tile_w, tile_h=tile_h, game_map=game_map)
 player.weapon.screen_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
+menu = Menu(screen, SCREEN_WIDTH, SCREEN_HEIGHT, background_path="assets/images/menu.jpg")
+
 clock = pygame.time.Clock()
 FPS = 60
 
+game_state = "menu"
+current_music_state = None
+
+def play_game_music():
+    try:
+        pygame.mixer.music.load("assets/sounds/game.mp3")
+        pygame.mixer.music.play(-1)
+    except Exception:
+        pass
+
 def main():
+    global game_state, current_music_state
     bullets = []
     running = True
+
     while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                bullets.append(player.fire())
+        if game_state != current_music_state:
+            current_music_state = game_state
+            if game_state == "menu":
+                menu.play_menu_music()
+            elif game_state == "play":
+                play_game_music()
 
-        player.update()
-        for bullet in bullets:
-            bullet.update()
-        bullets = [bullet for bullet in bullets if bullet.active]
+        if game_state == "menu":
+            game_state = menu.handle_events()
+            menu.draw()
 
-        screen.fill((0, 0, 0))
-        game_map.draw(screen)
-        for bullet in bullets:
-            bullet.draw(screen)
-        player.draw(screen)
+        elif game_state == "play":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    bullets.append(player.fire())
 
-        pygame.display.flip()
+            player.update()
+            
+            for bullet in bullets:
+                bullet.update()
+            bullets = [bullet for bullet in bullets if bullet.active]
+
+            screen.fill((0, 0, 0))
+            game_map.draw(screen)
+            for bullet in bullets:
+                bullet.draw(screen)
+            player.draw(screen)
+
+            pygame.display.flip()
+
         clock.tick(FPS)
 
     pygame.quit()
