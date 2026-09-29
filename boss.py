@@ -3,6 +3,9 @@ from enemy import Enemy
 
 
 class Boss(Enemy):
+    texture = None
+    texture_file = "boss.png"
+
     def __init__(self, x, y, tile_w, tile_h, game_map):
         super().__init__(x, y, tile_w, tile_h, game_map)
         self.health = 7
@@ -10,7 +13,7 @@ class Boss(Enemy):
         self.speed = 1
 
     def draw(self, surface):
-        pygame.draw.rect(surface, (255, 180, 0), self.rect)
+        surface.blit(self.image, self.rect)
 
         bar_rect = pygame.Rect(self.rect.left, self.rect.top - 7, self.rect.width, 4)
         pygame.draw.rect(surface, (100, 0, 0), bar_rect)

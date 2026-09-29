@@ -5,6 +5,7 @@ from enemy import Enemy
 from map_loader import Map
 from player import Player
 from menu import Menu
+from ui import BaseHealth, PlayerHealth
 
 pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.init()
@@ -75,13 +76,16 @@ def lose():
     pygame.time.delay(3000)
 
 def wave_completion_text(wave_number):
-    font = pygame.font.Font(None, 48)
-    text = font.render(f"Wave {wave_number} Complete!", True, (0, 255, 0))
-    text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
-    screen.fill((0, 0, 0))
-    screen.blit(text, text_rect)
-    pygame.display.flip()
-    pygame.time.delay(2000)
+    if wave_number >= 1:
+        font = pygame.font.Font(None, 48)
+        text = font.render(f"Wave {wave_number} Complete!", True, (0, 255, 0))
+        text_rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        screen.fill((0, 0, 0))
+        screen.blit(text, text_rect)
+        pygame.display.flip()
+        pygame.time.delay(2000)
+    else:
+        pass #Щоб не заважало при програші/перемозі
 
 menu = Menu(screen, SCREEN_WIDTH, SCREEN_HEIGHT, background_path="assets/images/menu.jpg")
 
@@ -119,6 +123,21 @@ def main():
 
     wave = 1
     base_health = 5
+    base_position = next(
+        (
+            (int(col_index * tile_w), int(row_index * tile_h))
+            for row_index, row in enumerate(game_map.grid)
+            for col_index, tile in enumerate(row)
+            if tile == "F"
+        ),
+        None,
+    )
+    player_health_ui = PlayerHealth(player)
+    base_health_ui = (
+        BaseHealth(base_position, tile_w, tile_h, base_health)
+        if base_position is not None
+        else None
+    )
     spawn_queue = create_wave(wave)
     enemies = []
     bullets = []
@@ -129,6 +148,7 @@ def main():
         update_music()
 
         if game_state == "menu":
+            pygame.display.set_caption(f"Menu - Battle City Remake")
             game_state = menu.handle_events()
             menu.draw()
 
@@ -158,16 +178,23 @@ def main():
             for enemy in enemies:
                 enemy.update()
                 if enemy.current_cell() == enemy.target:
+                    enemy.active = False
+                    base_health -= 1
                     if enemy.is_boss:
                         lose()
                         game_state = "menu"
-                    enemy.active = False
-                    base_health -= 1
+                        wave = 0
+                        base_health = 5
+                        player.health = 3
+                        enemies.clear()
+
                     if base_health <= 0:
                         lose()
                         game_state = "menu"
-                        break
-                    continue
+                        wave = 0
+                        base_health = 5
+                        player.health = 3
+                        enemies.clear()
 
                 bullet = enemy.fire()
                 if bullet is not None:
@@ -184,6 +211,10 @@ def main():
                                 if enemy.is_boss and not enemy.active:
                                     victory()
                                     game_state = "menu"
+                                    wave = 0
+                                    base_health = 5
+                                    player.health = 3
+                                    enemies.clear()
                                 break
                     elif bullet.owner == "enemy" and bullet.collides_with(player.rect):
                         bullet.active = False
@@ -191,10 +222,18 @@ def main():
                         if player.health <= 0:
                             lose()
                             game_state = "menu"
+                            wave = 0
+                            base_health = 5
+                            player.health = 3
+                            enemies.clear()
                             break
 
             bullets = [bullet for bullet in bullets if bullet.active]
             enemies[:] = [enemy for enemy in enemies if enemy.active]
+
+            player_health_ui.update()
+            if base_health_ui is not None:
+                base_health_ui.update(base_health)
 
             if wave < 10 and not enemies and not spawn_queue and enemy_spawns and player.health > 0 and base_health > 0:
                 wave_completion_text(wave)
@@ -210,6 +249,9 @@ def main():
             for bullet in bullets:
                 bullet.draw(screen)
             player.draw(screen)
+            player_health_ui.draw(screen)
+            if base_health_ui is not None:
+                base_health_ui.draw(screen)
             pygame.display.flip()
 
         clock.tick(FPS)
