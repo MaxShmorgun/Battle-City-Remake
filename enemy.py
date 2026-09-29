@@ -7,6 +7,7 @@ from weapons import Weapon
 
 class Enemy:
     texture = None
+    texture_file = "enemy.jpg"
     DIRECTIONS = ("up", "right", "down", "left")
     MOVEMENT = {
         "up": (0, -1),
@@ -21,12 +22,13 @@ class Enemy:
         self.game_map = game_map
         self.rect = pygame.Rect(x, y, tile_w * 0.8, tile_h * 0.8)
         self.rect.center = (int(x + tile_w / 2), int(y + tile_h / 2))
-        if Enemy.texture is None:
+        enemy_type = type(self)
+        if enemy_type.texture is None:
             texture_path = os.path.join(
-                os.path.dirname(__file__), "assets", "images", "enemy.jpg"
+                os.path.dirname(__file__), "assets", "images", enemy_type.texture_file
             )
-            Enemy.texture = pygame.image.load(texture_path).convert()
-        self.image = pygame.transform.scale(Enemy.texture, self.rect.size)
+            enemy_type.texture = pygame.image.load(texture_path).convert()
+        self.image = pygame.transform.scale(enemy_type.texture, self.rect.size)
         self.speed = randint(1, 2)
         self.active = True
         self.health = 1
@@ -158,3 +160,4 @@ class Enemy:
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
+        
